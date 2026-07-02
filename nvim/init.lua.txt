@@ -1,0 +1,42 @@
+# Neovim init config file
+# ~/.config/nvim/init.lua
+
+-- ========================================================================== --
+-- 1. BOOTSTRAP DI LAZY.NVIM
+-- ========================================================================== --
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+-- Setta la mapleader PRIMA di caricare i plugin, o le combinazioni falliranno
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
+
+-- ========================================================================== --
+-- 2. INIZIALIZZAZIONE PLUGIN
+-- ========================================================================== --
+require("lazy").setup({
+  -- Qui inseriremo i nostri plugin
+  -- Telescope e le sue dipendenze
+  {
+    'nvim-telescope/telescope.nvim',
+    tag = '0.1.8', -- Usa l'ultima release stabile
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      -- Questa funzione viene eseguita appena il plugin viene caricato
+      local builtin = require('telescope.builtin')
+
+      -- Mappature Keybindings usando le API native di Neovim
+      vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Cerca File' })
+      vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Cerca Testo Globale (Ripgrep)' })
+      vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Cerca nei Buffer Aperti' })
+      vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Cerca nella Documentazione' })
+    end
+  }
+})
+

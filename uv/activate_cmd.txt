@@ -1,0 +1,12 @@
+# In .bashrc file
+
+ENV_FOLDER_NAME=.code-venv or .venv
+
+activate(){
+  if [ -f "/<PATH>/<ENV_FOLDER_NAME>/bin/activate" ]; then
+    source /<PATH>/<ENV_FOLDER_NAME>/bin/activate
+    echo "Ambiente .venv attivato con successo!"
+  else
+    echo "Errore: la cartella .venv o il file di attivazione non sono stati trovati qui."
+  fi
+}

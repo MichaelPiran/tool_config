@@ -1,0 +1,99 @@
+[user]
+	email = ***
+	name = ***
+[safe]
+[credential]
+	helper = ***
+	UseHttpPath = true
+[push]
+	autoSetupRemote = true
+[alias]
+  f-init = "!f() { \
+    REMOTE=$(git remote); \
+    COUNT=$(echo \"$REMOTE\" | grep -c .); \
+    if [ \"$COUNT\" -ne 1 ]; then \
+      echo \"Più remoti (o nessuno) trovati: $REMOTE \"; \
+      exit 1; \
+    fi; \
+    MAIN=$(git symbolic-ref \"refs/remotes/$REMOTE/HEAD\" 2>/dev/null | sed \"s@refs/remotes/$REMOTE/@@\"); \
+    if [ -z \"$MAIN\" ]; then \
+      echo 'Branch principale non rilevabile automaticamente.'; \
+      echo \"Prova: git remote set-head $REMOTE -a\"; \
+      exit 1; \
+    fi; \
+    USERNAME=$(git config user.name); \
+    if [ -z \"$USERNAME\" ]; then \
+      echo \"Errore: user.name non configurato in Git.\" >&2; \
+      return 1; \
+    fi; \
+    PRBRANCHPREFIX=$(echo \"$USERNAME\" | tr ' ' '.' | tr '[:upper:]' '[:lower:]'); \
+    git config workflow.remote \"$REMOTE\"; \
+    git config workflow.mainbranch \"$MAIN\"; \
+    git config workflow.prbranchprefix \"$PRBRANCHPREFIX\"; \
+    echo \"Configurato: remote=$REMOTE main=$MAIN prbranchprefix=$PRBRANCHPREFIX\"; \
+  }; f"
+
+  f-start = "!f() { \
+    REMOTE=$(git config workflow.remote); \
+    MAIN=$(git config workflow.mainbranch); \
+    PRBRANCHPREFIX=$(git config workflow.prbranchprefix); \
+    if [ -z \"$REMOTE\" ] || [ -z \"$MAIN\" ] || [ -z \"$PRBRANCHPREFIX\" ]; then \
+      echo 'Feature non configurata. Esegui: git f-init'; exit 1; \
+    fi; \
+    git checkout \"$MAIN\" && \
+    git pull --ff-only \"$REMOTE\" \"$MAIN\" && \
+    BRANCH=\"${PRBRANCHPREFIX}/$(date +%Y%m%d%H%M%S)\"; \
+    git checkout -b \"$BRANCH\"; \
+  }; f"
+
+  f-sync = "!f() { \
+    REMOTE=$(git config workflow.remote); \
+    MAIN=$(git config workflow.mainbranch); \
+    if [ -z \"$REMOTE\" ] || [ -z \"$MAIN\" ]; then \
+      echo 'Feature non configurata. Esegui: git f-init'; exit 1; \
+    fi; \
+    CURRENT=$(git rev-parse --abbrev-ref HEAD); \
+    if [ \"$CURRENT\" = \"$MAIN\" ]; then echo \"Sei su $MAIN, niente da sincronizzare\"; exit 1; fi; \
+    git fetch \"$REMOTE\" \"$MAIN\" && \
+    git rebase \"$REMOTE/$MAIN\"; \
+  }; f"
+
+  f-pr = "!f() { \
+    REMOTE=$(git config workflow.remote); \
+    MAIN=$(git config workflow.mainbranch); \
+    if [ -z \"$REMOTE\" ] || [ -z \"$MAIN\" ]; then \
+      echo 'Feature non configurata. Esegui: git f-init'; exit 1; \
+    fi; \
+    BRANCH=$(git rev-parse --abbrev-ref HEAD); \
+    if [ \"$BRANCH\" = \"$MAIN\" ]; then echo \"Non puoi aprire una PR da $MAIN\"; exit 1; fi; \
+    REPO=$(basename -s .git $(git remote get-url \"$REMOTE\") | sed 's/.*\\///'); \
+    TITLE=\"${1:-$BRANCH}\"; \
+    git push -u \"$REMOTE\" \"$BRANCH\" && \
+    aws codecommit create-pull-request \
+      --title \"$TITLE\" \
+      --description \"${2:-}\" \
+      --targets repositoryName=$REPO,sourceReference=$BRANCH,destinationReference=\"$MAIN\"; \
+  }; f"
+
+  f-clean = "!f() { \
+    REMOTE=$(git config workflow.remote); \
+    MAIN=$(git config workflow.mainbranch); \
+    if [ -z \"$REMOTE\" ] || [ -z \"$MAIN\" ]; then \
+      echo 'Workflow non configurato. Esegui: git wf-init'; exit 1; \
+    fi; \
+    BRANCH=\"${1:-$(git rev-parse --abbrev-ref HEAD)}\"; \
+    if [ \"$BRANCH\" = \"$MAIN\" ]; then \
+      echo \"Sei su $MAIN, specifica il branch da pulire: git pr-clean <nome-branch>\"; exit 1; \
+    fi; \
+    git checkout \"$MAIN\" && \
+    git pull --ff-only \"$REMOTE\" \"$MAIN\" && \
+    git branch -d \"$BRANCH\"; \
+    if [ $? -ne 0 ]; then \
+      echo \"Il branch '$BRANCH' non risulta mergiato in $MAIN.\"; \
+      echo \"Se sei sicuro di volerlo eliminare comunque: git branch -D $BRANCH\"; \
+      exit 1; \
+    fi; \
+    git push \"$REMOTE\" --delete \"$BRANCH\" 2>/dev/null; \
+    git fetch \"$REMOTE\" --prune; \
+    echo \"Branch '$BRANCH' eliminato (locale + remoto + riferimento ripulito).\"; \
+  }; f"
