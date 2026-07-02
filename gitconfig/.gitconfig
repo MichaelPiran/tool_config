@@ -42,7 +42,8 @@
     fi; \
     git checkout \"$MAIN\" && \
     git pull --ff-only \"$REMOTE\" \"$MAIN\" && \
-    BRANCH=\"${PRBRANCHPREFIX}/$(date +%Y%m%d%H%M%S)\"; \
+    DEFAULTBRANCH=\"${PRBRANCHPREFIX}/$(date +%Y%m%d%H%M%S)\"; \
+    BRANCH=\"${1:-$DEFAULTBRANCH}\"; \
     git checkout -b \"$BRANCH\"; \
   }; f"
 
