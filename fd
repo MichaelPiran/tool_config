@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DEPTH="${1:-3}"
+
+selected=$(
+    find . \
+        -maxdepth "$DEPTH" \
+        -type d \
+        ! -path '*/.git/*' \
+        | sed 's#^\./##' \
+        | fzf
+)
+
+[ -n "$selected" ] && printf '%s\n' "$selected"
+

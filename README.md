@@ -2,5 +2,6 @@
 
 Collection of various tool configuration
 
-- ff.sh -> find file
-- fw.sh -> find word
+- ff -> find file
+- fw -> find word (-c case sensitive, -w search word)
+- fd -> find directories (indicare maxdepth, ddefault 3)
