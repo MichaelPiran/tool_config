@@ -6,5 +6,5 @@ selected=$(rg --files | fzf)
 
 [ -z "$selected" ] && exit 0
 
-vim ./"$selected"
+vim "$(pwd)/$selected"
 
