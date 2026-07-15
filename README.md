@@ -7,3 +7,8 @@ Collection of various tool configuration
 - fw -> find word (-c case sensitive, -w search word)
 - fd -> find directories (indicare maxdepth, ddefault 3)
 - fh -> history (use as bashrc function)
+
+## Used external tool
+- rg
+- fzf
+- zoxide
