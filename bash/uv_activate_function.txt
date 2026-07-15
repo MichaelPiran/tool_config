@@ -1,4 +1,3 @@
-# In .bashrc file
 
 ENV_FOLDER_NAME=.code-venv or .venv
 
